@@ -8,6 +8,7 @@ const PostCard = ({ post: rawPost }) => {
   const post = mapPost(rawPost);
   const primaryCategory = post.categories[0] || { name: 'Editorial', slug: 'editorial' };
   const imageUrl = post.featuredImage?.medium || post.featuredImage?.large || post.featuredImage?.full;
+  const altText = post.featuredImage?.altText || `Article thumbnail for ${post.title}`;
 
   return (
     <article className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden post-card transition-all bg-white">
@@ -15,9 +16,11 @@ const PostCard = ({ post: rawPost }) => {
       <div className="position-relative overflow-hidden card-img-top-wrapper" style={{ height: '210px' }}>
         <img
           src={imageUrl}
-          alt={post.featuredImage?.altText || post.title}
-          className="w-100 h-100 object-fit-cover card-img-hover"
+          alt={altText}
+          className="w-100 h-100 object-fit-cover card-img-hover aspect-card-img"
           loading="lazy"
+          width="400"
+          height="225"
         />
         <div className="position-absolute top-0 start-0 m-3">
           <Link
@@ -44,11 +47,11 @@ const PostCard = ({ post: rawPost }) => {
           )}
         </div>
 
-        <h5 className="card-title fw-bold text-dark fs-5 mb-3 line-clamp-2 title-link">
+        <h3 className="card-title fw-bold text-dark fs-5 mb-3 line-clamp-2 title-link">
           <Link to={`/blog/${post.slug}`} className="text-dark text-decoration-none hover-text-primary">
             {post.title}
           </Link>
-        </h5>
+        </h3>
 
         <p className="card-text text-secondary small mb-4 line-clamp-3 leading-relaxed flex-grow-1">
           {post.excerpt}
@@ -59,9 +62,10 @@ const PostCard = ({ post: rawPost }) => {
           <div className="d-flex align-items-center me-2">
             <img
               src={post.author.avatar}
-              alt={post.author.name}
+              alt={`Author ${post.author.name}`}
               className="rounded-circle me-2 border"
               style={{ width: '32px', height: '32px', objectFit: 'cover' }}
+              loading="lazy"
             />
             <span className="small text-muted fw-semibold text-truncate" style={{ maxWidth: '110px' }}>
               {post.author.name}

@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { getCategoryBySlug, getCategoryPosts } from '../services/wordpressApi';
 import PostGrid from '../components/blog/PostGrid';
 import Pagination from '../components/common/Pagination';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
 import EmptyState from '../components/common/EmptyState';
+import SEO from '../components/common/SEO';
+import PostCardSkeleton from '../components/common/skeletons/PostCardSkeleton';
 
 const Category = () => {
   const { slug } = useParams();
@@ -56,26 +57,40 @@ const Category = () => {
     };
   }, [slug, page]);
 
+  const categoryName = category ? category.name : slug.charAt(0).toUpperCase() + slug.slice(1);
+  const pageTitle = `${categoryName} Articles | TechPortal`;
+  const pageDescription = category?.description || `Browse curated ${categoryName} articles, tutorials, and tech guides on TechPortal.`;
+
   return (
     <div className="category-page py-5 bg-light min-vh-100">
+      <SEO title={pageTitle} description={pageDescription} />
+
       <div className="container">
         {/* Header Banner */}
-        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white text-center">
+        <header className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white text-center">
           <div className="max-w-2xl mx-auto">
             <span className="badge bg-primary text-white px-3 py-2 rounded-pill fw-bold mb-2">
               Topic Archive
             </span>
             <h1 className="fw-extrabold text-dark display-5 mb-3 text-capitalize">
-              {category ? category.name : slug}
+              {categoryName} Articles
             </h1>
             <p className="text-muted leading-relaxed mb-0">
-              {category?.description || `Explore curated stories, news, and insights published under ${category?.name || slug}.`}
+              {category?.description || `Explore curated stories, news, and technical tutorials published under ${categoryName}.`}
             </p>
           </div>
-        </div>
+        </header>
 
-        {/* Loading State */}
-        {loading && <LoadingSpinner message="Fetching category articles..." />}
+        {/* Loading State with Skeletons */}
+        {loading && (
+          <div className="row g-4 mb-5">
+            {[1, 2, 3, 4, 5, 6].map((idx) => (
+              <div key={idx} className="col-12 col-md-6 col-lg-4">
+                <PostCardSkeleton />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Error State */}
         {error && <ErrorMessage message={error} />}
@@ -83,7 +98,7 @@ const Category = () => {
         {/* Empty State */}
         {!loading && !error && posts.length === 0 && (
           <EmptyState
-            title={`No Articles in ${category ? category.name : slug}`}
+            title={`No Articles in ${categoryName}`}
             message="There are currently no published articles in this category."
             actionText="View All Articles"
             actionLink="/blog"
@@ -92,10 +107,10 @@ const Category = () => {
 
         {/* Posts Grid */}
         {!loading && !error && posts.length > 0 && (
-          <>
+          <section aria-label={`${categoryName} articles list`}>
             <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
               <span className="text-muted small fw-semibold">
-                Found {totalPosts} articles in <strong className="text-dark">{category?.name}</strong>
+                Found {totalPosts} articles in <strong className="text-dark">{categoryName}</strong>
               </span>
             </div>
 
@@ -109,7 +124,7 @@ const Category = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
-          </>
+          </section>
         )}
       </div>
     </div>

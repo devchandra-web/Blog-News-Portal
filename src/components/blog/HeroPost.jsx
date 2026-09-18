@@ -8,22 +8,26 @@ const HeroPost = ({ post: rawPost }) => {
   const post = mapPost(rawPost);
   const primaryCategory = post.categories[0] || { name: 'Featured', slug: 'featured' };
   const imageUrl = post.featuredImage?.large || post.featuredImage?.full || post.featuredImage?.medium;
+  const altText = post.featuredImage?.altText || `Featured article header: ${post.title}`;
 
   return (
-    <div className="card hero-card border-0 shadow-lg rounded-4 overflow-hidden mb-5 bg-dark text-white">
+    <article className="card hero-card border-0 shadow-lg rounded-4 overflow-hidden mb-5 bg-dark text-white">
       <div className="row g-0 align-items-center">
-        {/* Hero Image */}
+        {/* Hero Image Section - LCP Element */}
         <div className="col-lg-7 position-relative overflow-hidden" style={{ minHeight: '380px' }}>
           <img
             src={imageUrl}
-            alt={post.featuredImage?.altText || post.title}
-            className="w-100 h-100 object-fit-cover hero-img"
-            style={{ minHeight: '380px', maxHeight: '480px' }}
+            alt={altText}
+            className="w-100 h-100 object-fit-cover hero-img aspect-hero-img"
+            loading="eager"
+            fetchpriority="high"
+            width="800"
+            height="450"
           />
           <div className="hero-overlay"></div>
         </div>
 
-        {/* Hero Content */}
+        {/* Hero Content Section */}
         <div className="col-lg-5 p-4 p-md-5">
           <div className="d-flex align-items-center gap-2 mb-3">
             <Link
@@ -38,13 +42,13 @@ const HeroPost = ({ post: rawPost }) => {
             </span>
           </div>
 
-          <h1 className="card-title fw-extrabold fs-2 mb-3 text-white lh-sm hover-text-primary transition">
+          <h2 className="card-title fw-extrabold fs-2 mb-3 text-white lh-sm hover-text-primary transition">
             <Link to={`/blog/${post.slug}`} className="text-white text-decoration-none">
               {post.title}
             </Link>
-          </h1>
+          </h2>
 
-          <p className="card-text text-white-70 mb-4 leading-relaxed fs-6">
+          <p className="card-text text-white-70 mb-4 leading-relaxed fs-6 line-clamp-3">
             {post.excerpt}
           </p>
 
@@ -52,9 +56,10 @@ const HeroPost = ({ post: rawPost }) => {
             <div className="d-flex align-items-center">
               <img
                 src={post.author.avatar}
-                alt={post.author.name}
+                alt={`Author avatar for ${post.author.name}`}
                 className="rounded-circle me-2 border border-secondary"
                 style={{ width: '38px', height: '38px', objectFit: 'cover' }}
+                loading="lazy"
               />
               <div>
                 <span className="small text-white-80 fw-medium d-block lh-1">{post.author.name}</span>
@@ -68,7 +73,7 @@ const HeroPost = ({ post: rawPost }) => {
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 

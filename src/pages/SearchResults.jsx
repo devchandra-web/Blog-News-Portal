@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { searchPosts } from '../services/wordpressApi';
+import { useDebounce } from '../hooks/useDebounce';
 import PostGrid from '../components/blog/PostGrid';
 import SearchBar from '../components/common/SearchBar';
 import Pagination from '../components/common/Pagination';
-import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
 import EmptyState from '../components/common/EmptyState';
+import SEO from '../components/common/SEO';
+import PostCardSkeleton from '../components/common/skeletons/PostCardSkeleton';
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
-  const query = searchParams.get('q') || '';
+  const rawQuery = searchParams.get('q') || '';
+  const debouncedQuery = useDebounce(rawQuery, 350);
 
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
@@ -20,9 +23,11 @@ const SearchResults = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!query.trim()) {
+    const trimmed = debouncedQuery.trim();
+    if (!trimmed || trimmed.length < 2) {
       setPosts([]);
       setTotalPosts(0);
+      setLoading(false);
       return;
     }
 
@@ -31,7 +36,7 @@ const SearchResults = () => {
       setLoading(true);
       setError(null);
       try {
-        const data = await searchPosts(query, page, 9);
+        const data = await searchPosts(trimmed, page, 9);
         if (isMounted) {
           setPosts(data.posts || []);
           setTotalPosts(data.totalPosts || 0);
@@ -51,34 +56,48 @@ const SearchResults = () => {
     return () => {
       isMounted = false;
     };
-  }, [query, page]);
+  }, [debouncedQuery, page]);
+
+  const pageTitle = debouncedQuery
+    ? `Search results for "${debouncedQuery}" | TechPortal`
+    : 'Search Articles | TechPortal';
 
   return (
     <div className="search-results-page py-5 bg-light min-vh-100">
+      <SEO title={pageTitle} description={`Search results for "${debouncedQuery}" on TechPortal.`} />
+
       <div className="container">
         {/* Header Search Banner */}
-        <div className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white">
+        <header className="card border-0 shadow-sm rounded-4 p-4 p-md-5 mb-5 bg-white">
           <div className="max-w-2xl mx-auto text-center">
             <span className="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold mb-2">
-              Search Results
+              Search Portal
             </span>
             <h1 className="fw-extrabold text-dark h2 mb-3">
-              {query ? `Results for "${query}"` : 'Search Stories & Articles'}
+              {debouncedQuery ? `Search Results for "${debouncedQuery}"` : 'Search Stories & Articles'}
             </h1>
             <div className="mt-4">
               <SearchBar placeholder="Type keywords like react, css, tech..." />
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Loading State */}
-        {loading && <LoadingSpinner message={`Searching articles for "${query}"...`} />}
+        {/* Loading State with Skeletons */}
+        {loading && (
+          <div className="row g-4 mb-5">
+            {[1, 2, 3, 4, 5, 6].map((idx) => (
+              <div key={idx} className="col-12 col-md-6 col-lg-4">
+                <PostCardSkeleton />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Error State */}
         {error && <ErrorMessage message={error} />}
 
         {/* Empty Query State */}
-        {!query && (
+        {!rawQuery && (
           <EmptyState
             title="Enter a search term"
             message="Use the search bar above to query topics, technologies, or keywords."
@@ -86,9 +105,9 @@ const SearchResults = () => {
         )}
 
         {/* Empty Results State */}
-        {!loading && !error && query && posts.length === 0 && (
+        {!loading && !error && rawQuery && posts.length === 0 && (
           <EmptyState
-            title={`No results found for "${query}"`}
+            title={`No results found for "${rawQuery}"`}
             message="Try searching with different keywords or check spelling."
             actionText="Browse All Articles"
             actionLink="/blog"
@@ -97,10 +116,10 @@ const SearchResults = () => {
 
         {/* Search Results Grid */}
         {!loading && !error && posts.length > 0 && (
-          <>
+          <section aria-label="Search results list">
             <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
               <span className="text-muted small fw-semibold">
-                Found <strong className="text-dark">{totalPosts}</strong> matching {totalPosts === 1 ? 'article' : 'articles'} for "{query}"
+                Found <strong className="text-dark">{totalPosts}</strong> matching {totalPosts === 1 ? 'article' : 'articles'} for "{debouncedQuery}"
               </span>
             </div>
 
@@ -114,7 +133,7 @@ const SearchResults = () => {
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }}
             />
-          </>
+          </section>
         )}
       </div>
     </div>

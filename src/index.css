@@ -1,4 +1,4 @@
-/* Global CSS Options & Custom Styling for Chronicle Portal */
+/* Global CSS Options & Custom Styling for Chronicle / TechPortal */
 
 :root {
   --font-primary: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -18,6 +18,25 @@ body {
   color: #334155;
   overflow-x: hidden;
   line-height: 1.6;
+}
+
+/* Fluid Responsive Typography */
+h1, .display-4, .display-5 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+h2, .h2 {
+  font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+}
+
+h3, .h3 {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+}
+
+/* Accessible Focus States */
+:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.6) !important;
+  outline-offset: 2px !important;
 }
 
 /* Typography Helpers */
@@ -51,6 +70,19 @@ body {
 
 .max-w-md {
   max-width: 448px;
+}
+
+/* Image Aspect Ratio Layout Shift (CLS) Prevention */
+.aspect-card-img {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  object-fit: cover;
+}
+
+.aspect-hero-img {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  object-fit: cover;
 }
 
 /* Transitions & Animations */
@@ -87,7 +119,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, rgba(15, 23, 42, 0.7) 100%);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.1) 0%, rgba(15, 23, 42, 0.75) 100%);
 }
 
 .bg-gradient-primary {
@@ -107,6 +139,28 @@ body {
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Skeleton Loading Shimmer Effect */
+.skeleton-box {
+  background-color: #e2e8f0;
+  background-image: linear-gradient(
+    90deg,
+    #e2e8f0 0px,
+    #f1f5f9 40px,
+    #e2e8f0 80px
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
 }
 
 /* Sanitized Post Content Formatting */
@@ -182,4 +236,16 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Reduced Motion User Preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

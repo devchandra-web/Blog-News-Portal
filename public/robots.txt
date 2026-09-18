@@ -1,0 +1,11 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Exclude internal utility pages and search query parameters from crawling if needed
+Disallow: /search
+Disallow: /admin
+Disallow: /*?*
+
+# Sitemap Location
+Sitemap: https://example.com/sitemap.xml

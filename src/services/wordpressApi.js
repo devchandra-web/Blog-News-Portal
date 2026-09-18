@@ -13,6 +13,17 @@ const apiClient = axios.create({
 });
 
 /**
+ * In-Memory Client-Side Cache for stable WordPress resources
+ * Reduces duplicate network requests during SPA navigation.
+ */
+const apiCache = {
+  categories: null,
+  tags: null,
+  postsByParams: new Map(),
+  postBySlug: new Map()
+};
+
+/**
  * Extracts total posts and total pages from WordPress HTTP response headers
  * Headers: X-WP-Total & X-WP-TotalPages
  */
@@ -94,13 +105,22 @@ export const getPosts = async (pageOrOptions = 1, perPage = 9, options = {}) => 
     params = { ...params, ...options };
   }
 
+  // Generate cache key
+  const cacheKey = JSON.stringify(params);
+  if (apiCache.postsByParams.has(cacheKey)) {
+    return apiCache.postsByParams.get(cacheKey);
+  }
+
   if (USE_MOCK_API) {
-    return getMockPostsFiltered(params);
+    const result = getMockPostsFiltered(params);
+    apiCache.postsByParams.set(cacheKey, result);
+    return result;
   }
 
   try {
     const queryParams = {
       _embed: 1,
+      _fields: 'id,date,slug,title,excerpt,content,featured_media,categories,tags,author,_links,_embedded',
       page: params.page,
       per_page: params.perPage,
       status: params.status,
@@ -115,15 +135,20 @@ export const getPosts = async (pageOrOptions = 1, perPage = 9, options = {}) => 
     const meta = getHeaderPaginationMeta(response.headers);
     const normalizedPosts = (response.data || []).map(mapPost);
 
-    return {
+    const result = {
       posts: normalizedPosts,
       totalPosts: meta.total || normalizedPosts.length,
       totalPages: meta.totalPages || 1,
       currentPage: params.page
     };
+
+    apiCache.postsByParams.set(cacheKey, result);
+    return result;
   } catch (error) {
     console.warn('WordPress Live API call failed or unavailable. Falling back to Mock API:', error.message);
-    return getMockPostsFiltered(params);
+    const mockResult = getMockPostsFiltered(params);
+    apiCache.postsByParams.set(cacheKey, mockResult);
+    return mockResult;
   }
 };
 
@@ -133,38 +158,57 @@ export const getPosts = async (pageOrOptions = 1, perPage = 9, options = {}) => 
 export const getPostBySlug = async (slug) => {
   if (!slug) return null;
 
+  if (apiCache.postBySlug.has(slug)) {
+    return apiCache.postBySlug.get(slug);
+  }
+
   if (USE_MOCK_API) {
     const match = MOCK_POSTS.find((p) => p.slug === slug);
-    return match ? mapPost(match) : null;
+    const mapped = match ? mapPost(match) : null;
+    if (mapped) apiCache.postBySlug.set(slug, mapped);
+    return mapped;
   }
 
   try {
     const response = await apiClient.get('/posts', {
       params: {
         _embed: 1,
+        _fields: 'id,date,slug,title,excerpt,content,featured_media,categories,tags,author,_links,_embedded',
         slug
       }
     });
 
     if (response.data && response.data.length > 0) {
-      return mapPost(response.data[0]);
+      const mapped = mapPost(response.data[0]);
+      apiCache.postBySlug.set(slug, mapped);
+      return mapped;
     }
 
     const mockMatch = MOCK_POSTS.find((p) => p.slug === slug);
-    return mockMatch ? mapPost(mockMatch) : null;
+    const mappedMock = mockMatch ? mapPost(mockMatch) : null;
+    if (mappedMock) apiCache.postBySlug.set(slug, mappedMock);
+    return mappedMock;
   } catch (error) {
     console.warn(`Error fetching post by slug (${slug}):`, error.message);
     const mockMatch = MOCK_POSTS.find((p) => p.slug === slug);
-    return mockMatch ? mapPost(mockMatch) : null;
+    const mappedMock = mockMatch ? mapPost(mockMatch) : null;
+    if (mappedMock) apiCache.postBySlug.set(slug, mappedMock);
+    return mappedMock;
   }
 };
 
 /**
- * Fetch all categories
+ * Fetch all categories (Cached)
  */
 export const getCategories = async () => {
+  if (apiCache.categories) {
+    return apiCache.categories;
+  }
+
   if (USE_MOCK_API) {
-    return MOCK_CATEGORIES.map(mapCategory);
+    const categories = MOCK_CATEGORIES.map(mapCategory);
+    apiCache.categories = categories;
+    return categories;
   }
 
   try {
@@ -174,10 +218,14 @@ export const getCategories = async () => {
         hide_empty: false
       }
     });
-    return (response.data || []).map(mapCategory);
+    const categories = (response.data || []).map(mapCategory);
+    apiCache.categories = categories;
+    return categories;
   } catch (error) {
     console.warn('Error fetching categories from Live API, serving mocks:', error.message);
-    return MOCK_CATEGORIES.map(mapCategory);
+    const categories = MOCK_CATEGORIES.map(mapCategory);
+    apiCache.categories = categories;
+    return categories;
   }
 };
 
@@ -187,9 +235,13 @@ export const getCategories = async () => {
 export const getCategoryBySlug = async (slug) => {
   if (!slug) return null;
 
+  const categories = await getCategories();
+  const match = categories.find((c) => c.slug === slug);
+  if (match) return match;
+
   if (USE_MOCK_API) {
-    const match = MOCK_CATEGORIES.find((c) => c.slug === slug);
-    return match ? mapCategory(match) : null;
+    const mockMatch = MOCK_CATEGORIES.find((c) => c.slug === slug);
+    return mockMatch ? mapCategory(mockMatch) : null;
   }
 
   try {
@@ -221,10 +273,15 @@ export const getCategoryPosts = async (categoryId, page = 1, perPage = 9) => {
 };
 
 /**
- * Fetch all tags
+ * Fetch all tags (Cached)
  */
 export const getTags = async () => {
+  if (apiCache.tags) {
+    return apiCache.tags;
+  }
+
   if (USE_MOCK_API) {
+    apiCache.tags = MOCK_TAGS;
     return MOCK_TAGS;
   }
 
@@ -232,8 +289,11 @@ export const getTags = async () => {
     const response = await apiClient.get('/tags', {
       params: { per_page: 50 }
     });
-    return response.data || [];
+    const tags = response.data || [];
+    apiCache.tags = tags;
+    return tags;
   } catch (error) {
+    apiCache.tags = MOCK_TAGS;
     return MOCK_TAGS;
   }
 };
@@ -243,6 +303,10 @@ export const getTags = async () => {
  */
 export const getTagBySlug = async (slug) => {
   if (!slug) return null;
+
+  const tags = await getTags();
+  const match = tags.find((t) => t.slug === slug);
+  if (match) return match;
 
   if (USE_MOCK_API) {
     return MOCK_TAGS.find((t) => t.slug === slug) || null;
@@ -300,6 +364,7 @@ export const getRelatedPosts = async (categoryId, currentPostId, limit = 3) => {
   try {
     const params = {
       _embed: 1,
+      _fields: 'id,date,slug,title,excerpt,featured_media,categories,tags,author,_links,_embedded',
       per_page: limit
     };
     if (categoryId) params.categories = categoryId;

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import SEO from '../components/common/SEO';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -46,9 +47,14 @@ const Contact = () => {
 
   return (
     <div className="contact-page py-5 bg-light min-vh-100">
+      <SEO
+        title="Contact Us | TechPortal"
+        description="Contact TechPortal editorial team for inquiries, feedback, or technology story pitches."
+      />
+
       <div className="container">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-5">
+        <header className="text-center max-w-2xl mx-auto mb-5">
           <span className="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-bold mb-2">
             Get In Touch
           </span>
@@ -56,20 +62,20 @@ const Contact = () => {
           <p className="text-muted leading-relaxed">
             Have a story tip, partnership inquiry, or technical feedback? Drop us a message below.
           </p>
-        </div>
+        </header>
 
         <div className="row justify-content-center">
           <div className="col-lg-8">
             <div className="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
               {status === 'success' && (
-                <div className="alert alert-success rounded-3 p-3 mb-4 d-flex align-items-center">
+                <div className="alert alert-success rounded-3 p-3 mb-4 d-flex align-items-center" role="alert">
                   <i className="bi bi-check-circle-fill fs-4 me-2"></i>
                   <div>{feedback}</div>
                 </div>
               )}
 
               {status === 'error' && (
-                <div className="alert alert-danger rounded-3 p-3 mb-4 d-flex align-items-center">
+                <div className="alert alert-danger rounded-3 p-3 mb-4 d-flex align-items-center" role="alert">
                   <i className="bi bi-exclamation-triangle-fill fs-4 me-2"></i>
                   <div>{feedback}</div>
                 </div>
@@ -88,6 +94,7 @@ const Contact = () => {
                       placeholder="e.g. John Doe"
                       value={formData.name}
                       onChange={handleChange}
+                      required
                     />
                   </div>
 
@@ -102,6 +109,7 @@ const Contact = () => {
                       placeholder="john@example.com"
                       value={formData.email}
                       onChange={handleChange}
+                      required
                     />
                   </div>
 
@@ -116,6 +124,7 @@ const Contact = () => {
                       placeholder="Story pitch, inquiry, feedback..."
                       value={formData.subject}
                       onChange={handleChange}
+                      required
                     />
                   </div>
 
@@ -130,6 +139,7 @@ const Contact = () => {
                       placeholder="Write your message here..."
                       value={formData.message}
                       onChange={handleChange}
+                      required
                     ></textarea>
                   </div>
 
